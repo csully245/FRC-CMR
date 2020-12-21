@@ -1,10 +1,11 @@
 import numpy as np
 import random
+from matplotlib import pyplot as plt
 
 class Match:
     '''
     Represents FRC match data
-    Should be immutable
+    Data should be treated as immutable
     '''
     def __init__(self, teams, score_r, score_b):
         self.teams = teams
@@ -18,7 +19,6 @@ class Match:
             self.sn = -1
         else:
             self.sn = 0
-        #self.sn = (score_r - score_b) / score_r
 
     def to_str(self):
         out = "Red: %s, %s, %s " %(self.teams[0],self.teams[1],self.teams[2])
@@ -27,14 +27,19 @@ class Match:
         out += "(%s)\n" %self.sb
         return out
 
-# Core Algorithm
-def to_matrix(matches, team_count):
+def calc_cmr(matches, team_count):
     '''
-    Returns two matrices:
-    - A logical matrix of which matches each team played
-    - A matrix of the normalized score of each match
+    Core algorithm to determine each team's Contribution to Match Result (CMR)
+    The sum of your alliance's CMR minus the sum of your opponents' CMRs
+    produces a match prediction, with 1 as a win and -1 as a loss.
+    
+    Inputs:
+    -matches: list of Match objects
+    -team_count: number of teams in data
+    Output:
+    -cmr: np array of each team's Contribution to Match Result
     '''
-    # mat_matches
+    # Calculate match matrix
     mat_matches = np.zeros((team_count, len(matches)))
     for team in range(team_count):
         for match, num in zip(matches, range(len(matches))):
@@ -45,33 +50,27 @@ def to_matrix(matches, team_count):
             else:
                 val = 0
             mat_matches[team, num] = val
-    # mat_scores
+    # Calculate score matrix
     mat_scores = []
     for match in matches:
         mat_scores.append(match.sn)
     mat_scores = np.array(mat_scores)
-
-    return (np.transpose(mat_matches), mat_scores)
-
-def algo(matches, scores):
-    '''
-    Returns the rating of each team
-    Based on Least Squares solution
-    https://blog.thebluealliance.com/2017/10/05/the-math-behind-opr-an-introduction/
-    '''
-    matches_t = np.transpose(matches)
-    left_product = np.matmul(matches_t, matches)
-    right_product = np.matmul(matches_t, scores)
-    return np.linalg.solve(left_product, right_product)
+    # Calculate CMR
+    mat_matches = np.transpose(mat_matches)
+    return np.linalg.lstsq(mat_matches, mat_scores, rcond=None)[0]
 
 # Testing
-def make_matches(team_ratings, match_count):
+def make_matches(oprs, match_count):
     '''
-    Returns a list of Matches, with randomized matchups and scores as the sum
+    Inputs:
+    -oprs: np 1-D array, each team's Offensive Power Rating
+    -match_count: int, number of matches
+    Output:
+    -out: list of Matches, with randomized matchups and scores as the sum
     of team ratings.
     '''
     # Make matchups
-    team_count = len(team_ratings)
+    team_count = len(oprs)
     matchups = []
     for i in range(match_count):
         in_match = []
@@ -83,26 +82,37 @@ def make_matches(team_ratings, match_count):
     # Simulate matches
     matches = []
     for match in matchups:
-        red_score = team_ratings[match[0]]
-        red_score += team_ratings[match[1]]
-        red_score += team_ratings[match[2]]
-        blue_score = team_ratings[match[3]]
-        blue_score += team_ratings[match[4]]
-        blue_score += team_ratings[match[5]]
+        red_score = oprs[match[0]]
+        red_score += oprs[match[1]]
+        red_score += oprs[match[2]]
+        blue_score = oprs[match[3]]
+        blue_score += oprs[match[4]]
+        blue_score += oprs[match[5]]
         new_match = Match([match[0], match[1], match[2],
                           match[3], match[4], match[5] ],
                           red_score, blue_score)
         matches.append(new_match)
-    return np.transpose(matches)
-        
+    return matches
 
-def test(team_count=6, match_count=30):
-    team_ratings = np.linspace(0, 100, team_count)
-    matches = make_matches(team_ratings, match_count)
-    mat_matches, mat_scores = to_matrix(matches, team_count)
-    ratings = algo(mat_matches, mat_scores)
-    print(ratings)
-    for match in matches:
-        print(match.to_str())
-
-test(6, 10)
+def test(team_count, match_count, visual=True):
+    '''
+    Simulates matches for each team to demonstrate the CMR calculation
+    
+    Inputs:
+    -team_count: int, number of teams simulated
+    -match_count: int, number of matches simulated
+    -visual: bool, whether or not data is shown printed and graphically
+    Outputs:
+    -cmrs
+    '''
+    oprs = np.linspace(0, 100, team_count)
+    matches = make_matches(oprs, match_count)
+    cmrs = calc_cmr(matches, team_count)
+    if (visual):
+        print("OPR\t  CMR")
+        print("-------------")
+        for opr, cmr in zip(oprs, cmrs):
+            print("%s\t%s" %(round(opr, 2), round(cmr, 2)))
+        plt.plot(oprs, cmrs, "bo")
+        plt.show()
+    return cmrs
