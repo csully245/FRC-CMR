@@ -4,8 +4,11 @@ Experimenting with new ways to analyze FIRST Robotics Competition teams
 The goal of this project is to find a better way to analyze the performance of a team,
 for the purpose of a key performance indicator (KPI) of on-field performance. An ideal
 measure would have the following properties:
+
 -Comparisons valid between different FRC games
+
 -Comparisons valid between different teams
+
 -Improvements in team ability are directly reflected in score
 
 The current method for doing this is Caleb Sykes' modification to the Elo rating system.
