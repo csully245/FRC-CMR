@@ -13,12 +13,7 @@ class Match:
         self.blue_teams = teams[3:5]
         self.sr = score_r
         self.sb = score_b
-        if (score_r > score_b):
-            self.sn = 1
-        elif (score_r < score_b):
-            self.sn = -1
-        else:
-            self.sn = 0
+        self.sn = (score_r - score_b)/(score_r + score_b)
 
     def to_str(self):
         out = "Red: %s, %s, %s " %(self.teams[0],self.teams[1],self.teams[2])
