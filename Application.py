@@ -31,8 +31,8 @@ def tba2cmr(match):
     blues = match["alliances"]["blue"]["team_keys"]
     score_r = match["alliances"]["red"]["score"]
     score_b = match["alliances"]["blue"]["score"]
-    teams = reds[0:2] + blues[0:2]
-    return CMRcalc.Match(teams, score_r, score_b)
+    teams = reds + blues
+    return CMRcalc.Match(reds, blues, score_r, score_b)
 
 def get_event_results(tba_key, event, visual=True, verbose=False):
     '''
@@ -49,24 +49,31 @@ def get_event_results(tba_key, event, visual=True, verbose=False):
 
     # Query and calculation
     tba = tbapy.TBA(tba_key)
-    matches_tba = tba.event_matches(event, keys =True)
+    matches_tba = tba.event_matches(event, keys=True)
     matches = []
     for match_tba in matches_tba:
         match = tba.match(match_tba)
         matches.append(tba2cmr(match))
-    teams = tba.event_teams(event, keys = True)
-    cmrs = CMRcalc.calc_cmr(matches, len(teams))
+    teams = tba.event_teams(event, keys = True)    
+    cmrs = CMRcalc.calc_cmr(matches, teams)
 
     # Output
     out = {}
     for team, cmr in zip(teams, cmrs):
-        out.update({team, cmr})
+        out.update({team: cmr})
     if (verbose):
         print("Team\t  CMR")
         print("-------------")
         for team, cmr in zip(teams, cmrs):
             print("%s\t%s" %(team, round(cmr, 2)))
-
+    if (visual):
+        plt.hist(cmrs, bins=10)
+        plt.title(event + " CMRs")
+        plt.xlabel("Contribution to Match Result")
+        plt.ylabel("Frequency")
+        plt.show()
+    return out
+    
 # Simulated testing
 def make_matches(oprs, match_count):
     '''
@@ -96,8 +103,8 @@ def make_matches(oprs, match_count):
         blue_score = oprs[match[3]]
         blue_score += oprs[match[4]]
         blue_score += oprs[match[5]]
-        new_match = CMRcalc.Match([match[0], match[1], match[2],
-                          match[3], match[4], match[5] ],
+        new_match = CMRcalc.Match([match[0], match[1], match[2]],
+                          [match[3], match[4], match[5]],
                           red_score, blue_score)
         matches.append(new_match)
     return matches
@@ -117,7 +124,7 @@ def test(team_count, match_count, visual=True, verbose=False):
     '''
     oprs = np.linspace(0, 100, team_count)
     matches = make_matches(oprs, match_count)
-    cmrs = CMRcalc.calc_cmr(matches, team_count)
+    cmrs = CMRcalc.calc_cmr(matches, range(team_count))
     if (verbose):
         print("OPR\t  CMR")
         print("-------------")
@@ -125,5 +132,8 @@ def test(team_count, match_count, visual=True, verbose=False):
             print("%s\t%s" %(round(opr, 2), round(cmr, 2)))
     if (visual):
         plt.plot(oprs, cmrs, "bo")
+        plt.title(event + " CMR vs OPR")
+        plt.xlabel("Offensive Power Rating")
+        plt.ylabel("Contribution to Match Result")
         plt.show()
     return cmrs
