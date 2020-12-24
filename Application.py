@@ -2,6 +2,7 @@ import numpy as np
 import random
 from matplotlib import pyplot as plt
 import tbapy
+import json
 
 import CMRcalc
 
@@ -16,7 +17,56 @@ https://www.thebluealliance.com/
 Queries handled through tbapy, courtesy of FRC Team 1418
 https://github.com/frc1418/tbapy
 '''
+# TBA Helpers
+def get_tba_access():
+    '''
+    Returns a TBA object, used to access TBA API
 
+    If there is not a valid key in 'tba_key.json', it asks the user for
+    a key and stores that.
+    '''
+    filename = "tba_key.txt"
+    try:
+        file = open(filename, "r+")
+    except:
+        open(filename, "w")
+        file = open(filename, "r+")
+    key = file.read()
+    if (key == ""):
+        key = input("Enter a valid TBA authentication key\n")
+        file.write(key)
+    tba = tbapy.TBA(key)
+    file.close()
+    return tba
+    
+def get_tba_match(tba, match_name):
+    '''
+    Returns TBA data on a particular match. If the match is not in the
+    local file, accesses from TBA API and stores data
+
+    Inputs:
+    -tba: TBA object, used to access TBA API
+    -match_name: str, TBA match designation
+    Output:
+    -out: dict, output of tba.match()
+    '''
+    filename = "tba_data.json"
+    try:
+        with open(filename, "r") as read_file:
+            data = json.load(read_file)
+    except:
+        data = {}
+        with open(filename, "w") as write_file:
+            json.dump(data, write_file)
+    if not match_name in data.keys():
+        match = tba.match(match_name)
+        data.update({match_name: match})
+        with open(filename, "w") as write_file:
+            json.dump(data, write_file)
+    else:
+        match = data[match_name]
+    return match
+    
 def tba2cmr(match):
     '''
     Converts from a TBA match (dict) to a CMR match (obj)
@@ -51,8 +101,9 @@ def output_data(cmrs, teams, title, visual, verbose):
         plt.ylabel("Frequency")
         plt.show()
     return out
-    
-def get_event_results(tba_key, event, visual=True, verbose=False):
+
+# Top-level TBA access
+def get_event_results(event, visual=True, verbose=False):
     '''
     Returns the CMR of each team at a particular event
 
@@ -64,11 +115,11 @@ def get_event_results(tba_key, event, visual=True, verbose=False):
     Output:
     -out: dict, {team_key, cmr}
     '''
-    tba = tbapy.TBA(tba_key)
+    tba = get_tba_access()
     matches_tba = tba.event_matches(event, keys=True)
     matches = []
     for match_tba in matches_tba:
-        match = tba.match(match_tba)
+        match = get_tba_match(tba, match_tba)
         matches.append(tba2cmr(match))
     teams = tba.event_teams(event, keys = True)    
     cmrs = CMRcalc.calc_cmr(matches, teams)
@@ -88,7 +139,7 @@ def get_season_results(tba_key, year, visual=True, verbose=True):
     Output:
     -out: dict, {team_key, cmr}
     '''
-    tba = tbapy.TBA(tba_key)
+    tba = get_tba_access()
     matches_tba = []
     teams = []
     for event in tba.events(year, keys=True):
@@ -96,7 +147,7 @@ def get_season_results(tba_key, year, visual=True, verbose=True):
         teams += tba.event_teams(event, keys = True)
     matches = []
     for match_tba in matches_tba:
-        match = tba.match(match_tba)
+        match = get_tba_match(tba, match_tba)
         matches.append(tba2cmr(match))
     cmrs = CMRcalc.calc_cmr(matches, teams)
     title = str(year) + " CMRs"
