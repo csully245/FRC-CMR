@@ -36,4 +36,5 @@ Calculating FRC Team 245's result at the Troy District Event 2013
 
 ## Author
 This software was created by Cate Sullivan.
+
 https://www.linkedin.com/in/catherine-sullivan-7b2aa1156/
