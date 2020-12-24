@@ -34,6 +34,24 @@ def tba2cmr(match):
     teams = reds + blues
     return CMRcalc.Match(reds, blues, score_r, score_b)
 
+def output_data(cmrs, teams, title, visual, verbose):
+    # Output
+    out = {}
+    for team, cmr in zip(teams, cmrs):
+        out.update({team: cmr})
+    if (verbose):
+        print("Team\t  CMR")
+        print("-------------")
+        for team, cmr in zip(teams, cmrs):
+            print("%s\t%s" %(team, round(cmr, 2)))
+    if (visual):
+        plt.hist(cmrs, bins=10)
+        plt.title(title)
+        plt.xlabel("Contribution to Match Result")
+        plt.ylabel("Frequency")
+        plt.show()
+    return out
+    
 def get_event_results(tba_key, event, visual=True, verbose=False):
     '''
     Returns the CMR of each team at a particular event
@@ -46,8 +64,6 @@ def get_event_results(tba_key, event, visual=True, verbose=False):
     Output:
     -out: dict, {team_key, cmr}
     '''
-
-    # Query and calculation
     tba = tbapy.TBA(tba_key)
     matches_tba = tba.event_matches(event, keys=True)
     matches = []
@@ -56,23 +72,35 @@ def get_event_results(tba_key, event, visual=True, verbose=False):
         matches.append(tba2cmr(match))
     teams = tba.event_teams(event, keys = True)    
     cmrs = CMRcalc.calc_cmr(matches, teams)
+    title = event + " CMRs"
+    return output_data(cmrs, teams, title, visual, verbose)
 
-    # Output
-    out = {}
-    for team, cmr in zip(teams, cmrs):
-        out.update({team: cmr})
-    if (verbose):
-        print("Team\t  CMR")
-        print("-------------")
-        for team, cmr in zip(teams, cmrs):
-            print("%s\t%s" %(team, round(cmr, 2)))
-    if (visual):
-        plt.hist(cmrs, bins=10)
-        plt.title(event + " CMRs")
-        plt.xlabel("Contribution to Match Result")
-        plt.ylabel("Frequency")
-        plt.show()
-    return out
+def get_season_results(tba_key, year, visual=True, verbose=True):
+    '''
+    Returns the CMR of each team in a particular season
+
+    Input:
+    -tba_key: string, your The Blue Alliance API authentication key
+    -year: int, year to query. No usable TBA data prior to 2002.
+    -visual: bool, whether or not a histogram is displayed
+    -verbose: whether or not each team's data is printed
+    
+    Output:
+    -out: dict, {team_key, cmr}
+    '''
+    tba = tbapy.TBA(tba_key)
+    matches_tba = []
+    teams = []
+    for event in tba.events(year, keys=True):
+        matches_tba += tba.event_matches(event, keys=True)
+        teams += tba.event_teams(event, keys = True)
+    matches = []
+    for match_tba in matches_tba:
+        match = tba.match(match_tba)
+        matches.append(tba2cmr(match))
+    cmrs = CMRcalc.calc_cmr(matches, teams)
+    title = str(year) + " CMRs"
+    return output_data(cmrs, teams, title, visual, verbose)
     
 # Simulated testing
 def make_matches(oprs, match_count):
