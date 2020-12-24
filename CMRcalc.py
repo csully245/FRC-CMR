@@ -167,7 +167,7 @@ def output_data(cmrs, teams, title, visual, verbose):
 #-------------------------
 def get_event_results(event, visual=True, verbose=False):
     '''
-    Returns the CMR of each team at a particular event
+    Returns the CMR of each team with respect to particular event
 
     Input:
     -event: string, official event designation
@@ -190,7 +190,7 @@ def get_event_results(event, visual=True, verbose=False):
 
 def get_season_results(year, visual=True, verbose=True):
     '''
-    Returns the CMR of each team in a particular season
+    Returns the CMR of each team with respect to a particular season
 
     Input:
     -year: int, year to query. No usable TBA data prior to 2002.
@@ -216,7 +216,7 @@ def get_season_results(year, visual=True, verbose=True):
 
 def get_historic_results(visual=True, verbose=True):
     '''
-    Returns the CMR of each team to compete in FRC since 2002
+    Returns the CMR of all teams, with respect to all matches since 2002
 
     Input:
     -visual: bool, whether or not a histogram is displayed
@@ -242,15 +242,15 @@ def get_historic_results(visual=True, verbose=True):
     return output_data(cmrs, teams, title, visual, verbose)
 
 
-def get_all_tba(tba, show_time=True):
+def download_all_matches(show_time=True):
     '''
     Stores all TBA matches locally, 2002-present
     NOTE: Will take over an hour and a GB of data
 
     Inputs:
-    -tba: TBA object, used to access TBA API
     -show_time: bool, whether to show the download time
     '''
+    tba = get_tba_access()
     if show_time:
         start = time.perf_counter()
     today = date.today()
