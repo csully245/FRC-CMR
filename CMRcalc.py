@@ -51,7 +51,13 @@ def calc_cmr(matches, team_keys):
     # Calculate score matrix
     mat_scores = []
     for match in matches:
-        score_norm = (match.sr - match.sb)/(match.sr + match.sb)
+        if (match.sr > match.sb):
+            score_norm = 1
+        elif (match.sr < match.sb):
+            score_norm = -1
+        else:
+            score_norm = 0
+        #score_norm = (match.sr - match.sb)/(match.sr + match.sb)
         mat_scores.append(score_norm)
     mat_scores = np.array(mat_scores)
     # Calculate CMR
