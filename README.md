@@ -1,5 +1,6 @@
 # CMRcalc
-Python module for calculating the Contribution to Match Result for *FIRST* Robotics Competition teams
+Python module for calculating the Contribution to Match Result for *FIRST* Robotics Competition teams.
+Chief Delphi post: https://www.chiefdelphi.com/t/analyzing-robot-performance-across-years/389981/1
 
 Powered by TheBlueAlliance
 
