@@ -22,6 +22,11 @@ class Demi_Match:
         out += "\nScore: " + str(self.score)
         return out
 
+def sort_dict(d):
+    out = {}
+    for w in sorted(d, key=d.get, reverse=True):
+        out.update({w: d[w]})
+    return out
 #-------------------------
 # Core Algorithm
 #-------------------------
@@ -40,12 +45,15 @@ def get_oprs(matches, team_keys):
     team_count = len(team_keys)
     mat_matches = np.zeros((team_count, len(matches)))
     for team, team_idx in zip(team_keys, range(len(team_keys))):
-        for match, num in zip(matches, range(len(matches))):
+        for match, match_idx in zip(matches, range(len(matches))):
             if team in match.teams:
+                if team == "frc1322":
+                    print(match_idx)
                 val = 1
             else:
                 val = 0
-            mat_matches[team_idx, num] = val
+            mat_matches[team_idx, match_idx] = val
+    
     # Calculate score matrix
     mat_scores = []
     for match in matches:
@@ -66,7 +74,6 @@ def normalize_opr(oprs):
     Output:
     -nopr: dict, {team, Normalized OPR}
     '''
-    oprs = np.array(get_oprs(matches, team_keys))
     mean = np.mean(oprs)
     stdev = np.std(oprs)
     oprs = (oprs - mean) / stdev
@@ -143,12 +150,13 @@ def output_data(noprs, teams, title, visual, verbose):
     # Output
     out = {}
     for team, nopr in zip(teams, noprs):
-        out.update({team: noprs})
+        out.update({team: nopr})
+    out = sort_dict(out)
     if (verbose):
         print("Team\t  NOPR")
         print("-------------")
-        for team, nopr in zip(teams, noprs):
-            print("%s\t%s" %(team, round(noprs, 2)))
+        for team, nopr in zip(out.keys(), out.values()):
+            print("%s\t%s" %(team, round(nopr, 2)))
     if (visual):
         plt.hist(noprs, bins=15)
         plt.title(title)
@@ -176,10 +184,10 @@ def get_event_results(event, visual=True, verbose=False):
     matches = []
     for match_tba in matches_tba:
         match = get_tba_match(tba, match_tba)
-        matches.append(tba2cmr(match)[0])
-        matches.append(tba2cmr(match)[1])
+        matches.append(tba2demi(match)[0])
+        matches.append(tba2demi(match)[1])
     teams = tba.event_teams(event, keys=True)    
     oprs = get_oprs(matches, teams)
-    noprs = normalize_oprs(oprs)
+    noprs = normalize_opr(oprs)
     title = event + " Normalized OPRs"
     return output_data(noprs, teams, title, visual, verbose)
