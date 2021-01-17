@@ -47,8 +47,6 @@ def get_oprs(matches, team_keys):
     for team, team_idx in zip(team_keys, range(len(team_keys))):
         for match, match_idx in zip(matches, range(len(matches))):
             if team in match.teams:
-                if team == "frc1322":
-                    print(match_idx)
                 val = 1
             else:
                 val = 0
@@ -168,7 +166,7 @@ def output_data(noprs, teams, title, visual, verbose):
 #-------------------------
 # User-Facing Application
 #-------------------------
-def get_event_results(event, visual=True, verbose=False):
+def get_event_results(event, elims=False, visual=True, verbose=False):
     '''
     Returns the NOPR of each team with respect to particular event
     Input:
@@ -181,6 +179,14 @@ def get_event_results(event, visual=True, verbose=False):
     '''
     tba = get_tba_access()
     matches_tba = tba.event_matches(event, keys=True)
+
+    if not (elims):
+        new_matches_tba = []
+        for match_key in matches_tba:
+            if ("_qm" in match_key):
+                new_matches_tba.append(match_key)
+        matches_tba = new_matches_tba
+    
     matches = []
     for match_tba in matches_tba:
         match = get_tba_match(tba, match_tba)
@@ -191,3 +197,12 @@ def get_event_results(event, visual=True, verbose=False):
     noprs = normalize_opr(oprs)
     title = event + " Normalized OPRs"
     return output_data(noprs, teams, title, visual, verbose)
+
+
+'''
+Left off:
+-Seems to be grabbing the right matches for each team
+-Matches are not in order!!
+-Data is just slightly off the TBA OPR results
+
+'''
